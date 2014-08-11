@@ -72,6 +72,8 @@ static const char dcs_html_info[] = "<table border=\"0\" width=\"95%\"><tr>"
                               "<font size=\"2\"><b><a href=\"http://www.UP4DAR.de\">www.UP4DAR.de</a></b>&nbsp;</font>"
 							  
 							  //"<font size=\"1\">Version: X.0.00.00 </font>"
+
+							  "<font size=\"1\">V_1.01.37e IFT_2.1</font>"													/////////// IFT ///////////
 		 
                               "</td>"
 
@@ -794,8 +796,7 @@ static void send_dcs_private (int session_id, int last_frame, char dcs_frame_cou
 	
 	d[4] = 0;  // flags
 	d[5] = 0;
-	d[6] = 0;
-	
+	d[6] = 0x0d;																					/////////// IFT ///////////
 	
 	char buf[8];
 	
@@ -888,7 +889,7 @@ static void send_dextra_header(int session_id, const char * mycall, const char *
   // Flags
   d[15] = 0;
   d[16] = 0;
-  d[17] = 0;
+  d[17] = 0x0d;																					/////////// IFT ///////////
 
   char reflector[8];
   dcs_get_current_reflector_name(reflector);

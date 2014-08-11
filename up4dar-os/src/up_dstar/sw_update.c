@@ -340,6 +340,11 @@ int snmp_set_sw_update (int32_t arg, const uint8_t * req, int req_len)
 			calc_sha1 ( block_number, tmp_info.sha1sum );
 			
 			flashc_memcpy(STAGING_AREA_INFO_ADDRESS, & tmp_info, sizeof tmp_info, true);
+			// enable watchdog -> reset in one second												/////////// IFT ///////////
+			AVR32_WDT.ctrl = 0x55001001;															/////////// IFT ///////////
+			AVR32_WDT.ctrl = 0xAA001001;															/////////// IFT ///////////
+
+
 		}
 		else if (parse_version_string(vbuf, "HW-Ver: ", hw_version, 2)
 			&& parse_version_string(vbuf, "SW-Ver: ", tmp_info.version_info + 1, 3)

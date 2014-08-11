@@ -43,6 +43,7 @@ void vdisp_init ( void );
 void vdisp_prints_xy ( int x, int y, struct vdisp_font * font, int disp_inverse, const char * s );
 void vdisp_clear_rect(int x, int y, int width, int height);
 void vdisp_printc_xy ( int x, int y, struct vdisp_font * font, int disp_inverse, unsigned char c);
+void vdisp_printh_xy_ift ( int x, int y, struct vdisp_font * font, int disp_inverse, unsigned long n);			/////////// IFT ///////////
 void vdisp_set_pixel ( int x, int y, int disp_inverse, unsigned char data, int numbits );
 // void vdisp_save_buf(void);
 // void vdisp_load_buf(void);

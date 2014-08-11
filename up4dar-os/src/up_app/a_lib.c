@@ -304,7 +304,7 @@ void tx_info_off(void)
 	{
 		tx_info = false;
 		lcd_show_menu_layer(help_layer);
-		help_layer_timer = 3; // approx 2 seconds
+		help_layer_timer = 1; // approx 100ms								/////////// ALX ///////////
 	}
 }
 

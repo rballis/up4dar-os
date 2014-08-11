@@ -51,6 +51,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "settings.h"
 #include "up_app/a_lib_internal.h"
 #include "up_dstar/r2cs.h"
+#include "up_io/wm8510.h"														/////////// IFT ///////////
+#include "up_io/lcd.h"															/////////// IFT ///////////
+#include "up_io/serial2.h"														/////////// IFT ///////////
 
 
 static xQueueHandle dstarQueue;
@@ -87,10 +90,63 @@ static void mkPrintableString (char * data, int len)
 
 
 static char buf[40];
+static char last_header[40];
 
 
 static void printHeader( int ypos, unsigned char crc_result, const unsigned char * header_data )
 {
+///////////////////////////////////////////////////////////////////////////////////////////// IFT /////////////////////
+
+
+if (crc_result == 0)
+{
+	if ((header_data[0]==1)  &&	/* Auto RPT 1 */								// FL0 == 1 // Hospot wants to write to RPT1
+	(memcmp(header_data+19,settings.s.my_callsign,CALLSIGN_LENGTH)==0)  &&		// If in the UR is my callsign (Hotspot/RPTR sending data to write for me)
+	(memcmp(header_data+3,settings.s.rpt1,CALLSIGN_LENGTH)!=0) )		        // if RPT2 of hotspot/rptr does not match my RPT1 // Cyclic write protection
+
+	{
+		memcpy(settings.s.rpt1,header_data+3, CALLSIGN_LENGTH);					// Copy RPT2 of hotspot/rptr to my RPT1
+		memcpy(settings.s.rpt2,header_data+3, CALLSIGN_LENGTH-1);				// Copy RPT2 of hotspot/rptr to my RPT2 minus last character
+		settings.s.rpt2[CALLSIGN_LENGTH-1]='G';									// Fill in the 'G'
+		mkPrintableString(settings.s.rpt1,8);									// clear array LCD
+		vdisp_prints_xy(0, 27, VDISP_FONT_6x8, 0, settings.s.rpt1);				// print
+		vdisp_prints_xy(52, 27, VDISP_FONT_6x8, 0, "ok!");
+
+	}
+	else /* Auto UR */
+	if (((header_data[0] == 0x40) || (header_data[0] == 0))  &&
+	(memcmp(header_data+19,settings.s.my_callsign,CALLSIGN_LENGTH)==0)  &&		// if my callsign is in UR (CSR - someone calling me)
+	(memcmp(header_data+27,settings.s.urcall,CALLSIGN_LENGTH)!=0) )				// if 'MY' of opposite station does not match my UR // Cyclic write protection
+	
+	{
+		memcpy(settings.s.urcall,header_data+27,CALLSIGN_LENGTH);
+		mkPrintableString(settings.s.urcall,8);									// clear array LCD
+		vdisp_prints_xy(0, 27, VDISP_FONT_6x8, 0, settings.s.urcall);			// print
+		vdisp_prints_xy(52, 27, VDISP_FONT_6x8, 0, "ok!");
+		
+	}
+	else /* Auto CQCQCQ */
+	if (((header_data[0] == 0x40) || (header_data[0] < 2))  &&					// we can write to up4dar
+	(memcmp(header_data+19,"CQCQCQ  ",CALLSIGN_LENGTH)==0)  &&	                // if UR of hotspot/rptr or any station contains CQCQCQ
+	(memcmp(header_data+19,settings.s.urcall,CALLSIGN_LENGTH)!=0) )		        // if UR of hotspot/rptr does not match my UR // Cyclic write protection
+	
+	{
+		memcpy(settings.s.urcall,header_data+19,CALLSIGN_LENGTH);
+		mkPrintableString(settings.s.urcall,8);									// clear array LCD
+		vdisp_prints_xy(0, 27, VDISP_FONT_6x8, 0, settings.s.urcall);			// print
+		vdisp_prints_xy(52, 27, VDISP_FONT_6x8, 0, "ok!");
+
+	}
+	
+	if (memcmp(header_data+3,settings.s.rpt1,CALLSIGN_LENGTH)!=0)				//
+	memcpy(last_header, header_data, 40);
+	
+	//dstarPrintFlags_ift(header_data[0],header_data[1],header_data[2]);			// print Flags 0,1,2 (HEX,2)
+	
+
+}
+///////////////////////////////////////////////////////////////////////////////////////////// IFT /////////////////////
+
 	
 	memcpy(buf, header_data + 19, 8);
 	mkPrintableString(buf,8);
@@ -98,20 +154,22 @@ static void printHeader( int ypos, unsigned char crc_result, const unsigned char
 	
 	if ((crc_result == 0) && (ypos == 5))
 	{
-		if ((header_data[0] & 0x07) == 0)
+		//lcd_set_backlight (90);
+		//if ((header_data[0] & 0x07) == 0)
+		//if(header_data[0] > 0 )
 		{
-			// vdisp_clear_rect (0, 48, 128, 16);
-			vdisp_prints_xy(0, 48, VDISP_FONT_6x8, 0, "UR:");
+			vdisp_clear_rect (0, 48, 128, 16);
+			vdisp_prints_xy(0, 48, VDISP_FONT_6x8, 0, "UR:");						// pod 8x12
 			vdisp_prints_xy(18, 48, VDISP_FONT_6x8, 0, buf);
 			
 			rtclock_disp_xy(70, 48, 2, 0);
 		}
-		else
-		{
-			// vdisp_load_buf();
-			repeater_msg = 1;
-			vdisp_prints_xy(80, 16, VDISP_FONT_6x8, 0, buf);
-		}
+//		else																					/////////// IFT ///////////
+//		{																						/////////// IFT ///////////
+//			// vdisp_load_buf();																/////////// IFT ///////////
+//			repeater_msg = 1;																	/////////// IFT ///////////
+//			vdisp_prints_xy(80, 16, VDISP_FONT_6x8, 0, buf);									/////////// IFT ///////////
+//		}																						/////////// IFT ///////////
 		
 	}
 	else if ((crc_result == 0) && (ypos == 9))
@@ -123,6 +181,8 @@ static void printHeader( int ypos, unsigned char crc_result, const unsigned char
 		}
 		vdisp_prints_xy(74, 18, VDISP_FONT_4x6, 0, "UR:");
 		vdisp_prints_xy(86, 18, VDISP_FONT_4x6, 0, buf);
+		//dstarPrintFlags_ift(header_data[0],header_data[1],header_data[2]);						/////////// IFT ///////////
+
 	}
 	
 	if (ypos == 5)
@@ -136,15 +196,18 @@ static void printHeader( int ypos, unsigned char crc_result, const unsigned char
 	
 	if ((crc_result == 0) && (ypos == 5))
 	{
-		if ((header_data[0] & 0x07) == 0)
+	 //if ((header_data[0] & 0x07) == 0)															/////////// IFT ///////////
+	 //  if(header_data[0] > 0 )																	/////////// IFT ///////////
 		{
 			vdisp_prints_xy(0, 36, VDISP_FONT_8x12, 0, "RX:");
 			vdisp_prints_xy(24, 36, VDISP_FONT_8x12, 0, buf);
+			dstarProcessCom_ift( 1, buf);															/////////// IFT ///////////
+
 		}
-		else
-		{
-			vdisp_prints_xy(80, 8, VDISP_FONT_6x8, 0, buf);
-		}
+	/*	else																						/////////// IFT ///////////
+		{																							/////////// IFT ///////////
+			//vdisp_prints_xy(80, 8, VDISP_FONT_6x8, 0, buf);										/////////// IFT ///////////
+		}*/																							/////////// IFT ///////////
 	}
 	else if ((crc_result == 0) && (ypos == 9))
 	{
@@ -164,7 +227,8 @@ static void printHeader( int ypos, unsigned char crc_result, const unsigned char
 	
 	if ((crc_result == 0) && (ypos == 5))
 	{
-		if ((header_data[0] & 0x07) == 0)
+		//if ((header_data[0] & 0x07) == 0)															/////////// IFT ///////////
+		//if(header_data[0] > 0 )																	/////////// IFT ///////////
 		{
 			vdisp_prints_xy(88, 36, VDISP_FONT_8x12, 0, "/");
 			vdisp_prints_xy(96, 36, VDISP_FONT_8x12, 0, buf);
@@ -397,6 +461,8 @@ static void dstarStateChange(unsigned char n)
 				*/
 				
 				//vdisp_prints_xy( 0,0, VDISP_FONT_6x8, 0, "    " );
+				dstarProcessCom_ift( 0, "END-RADIO");																	/////////// IFT ///////////
+
 			}
 			else
 			{
@@ -1512,6 +1578,7 @@ void dstarProcessDCSPacket( const uint8_t * data )
 	{
 		last_frame = 1;
 		rx_q_input_stop ( SOURCE_NET, dcs_session, data[45] & 0x1F );
+		dstarProcessCom_ift( 0, "END-DCS");																	/////////// IFT ///////////
 	}			
 	else
 	{
@@ -1588,6 +1655,7 @@ static int dextra_packet_counter = 0;
 void dstarProcessDExtraPacket(const uint8_t* data)
 {
 	uint8_t buf[4];
+	//uint8_t MySdData_ift[12];																	/////////// IFT ///////////
 
 	int dcs_session = data[12] | (data[13] << 8);
 
@@ -1624,6 +1692,14 @@ void dstarProcessDExtraPacket(const uint8_t* data)
 		buf[2] = 0x93 ^ data[26];
 
 		// processSlowData(data[14], buf);
+
+/*		
+		memcpy(& MySdData_ift, data +15, 12);									/////////// IFT ///////////
+		for (uint8_t i=0; i<12; i++)											/////////// IFT ///////////
+		{																		/////////// IFT ///////////
+			serial_putc(0,MySdData_ift[i]);										/////////// IFT ///////////
+		}*/																		/////////// IFT ///////////
+
 
 		rx_q_input_voice ( SOURCE_NET, dcs_session, data[14] & 0x1F, data + 15 );
 		rx_q_input_data ( SOURCE_NET, dcs_session, data[14] & 0x1F, (uint8_t *) buf );
@@ -1666,3 +1742,40 @@ void dstarInit( xQueueHandle dq )
 	//	tskIDLE_PRIORITY + 1 , ( xTaskHandle * ) NULL );
 
 }
+
+
+///////////////////////////////////////////////////////////////////////////////////////////// IFT /////////////////////
+void dstarPrintFlags_ift(uint8_t fl_0,uint8_t fl_1,uint8_t fl_2)
+{
+	uint8_t x = 100, y = 29;
+	vdisp_printh_xy_ift(x + 0 , y, VDISP_FONT_4x6, 0,fl_0);
+	vdisp_printh_xy_ift(x + 10, y, VDISP_FONT_4x6, 0,fl_1);
+	vdisp_printh_xy_ift(x + 20, y, VDISP_FONT_4x6, 0,fl_2);
+}
+
+void dstarProcessCom_ift(uint8_t b, char * data)
+{
+	serial_init(0, 4800);	// was 115200									/////////// ALX ///////////
+	if ( b == 1)
+	{
+		lcd_set_backlight (50);
+		while ( *data != 0 )
+		{
+			serial_putc(0,*data);
+			data++;
+		}
+	}
+	else
+	if ( b == 0)
+	{
+		lcd_set_backlight (8);
+		while ( *data != 0 )
+		{
+			serial_putc(0,*data);
+			data++;
+		}
+	}
+	
+	
+}
+///////////////////////////////////////////////////////////////////////////////////////////// IFT /////////////////////
