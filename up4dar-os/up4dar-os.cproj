@@ -2,7 +2,7 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
   <PropertyGroup>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectVersion>6.1</ProjectVersion>
+    <ProjectVersion>6.2</ProjectVersion>
     <ProjectGuid>{7572ef25-e2ae-4003-b347-6ec9c7f7b672}</ProjectGuid>
     <avrdevice>AT32UC3A1512</avrdevice>
     <avrdeviceseries>uc3a</avrdeviceseries>
