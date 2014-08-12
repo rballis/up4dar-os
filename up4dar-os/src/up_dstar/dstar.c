@@ -95,8 +95,8 @@ static char last_header[40];
 
 static void printHeader( int ypos, unsigned char crc_result, const unsigned char * header_data )
 {
-///////////////////////////////////////////////////////////////////////////////////////////// IFT /////////////////////
 
+///////////////////////////////////////////////////////////////////////////////////////////// IFT /////////////////////
 
 if (crc_result == 0)
 {
@@ -181,7 +181,7 @@ if (crc_result == 0)
 		}
 		vdisp_prints_xy(74, 18, VDISP_FONT_4x6, 0, "UR:");
 		vdisp_prints_xy(86, 18, VDISP_FONT_4x6, 0, buf);
-		//dstarPrintFlags_ift(header_data[0],header_data[1],header_data[2]);						/////////// IFT ///////////
+		//dstarPrintFlags_ift(header_data[0],header_data[1],header_data[2]);		// print Flags 0,1,2 (HEX,2)		/////////// IFT ///////////
 
 	}
 	
@@ -201,7 +201,7 @@ if (crc_result == 0)
 		{
 			vdisp_prints_xy(0, 36, VDISP_FONT_8x12, 0, "RX:");
 			vdisp_prints_xy(24, 36, VDISP_FONT_8x12, 0, buf);
-			dstarProcessCom_ift( 1, buf);															/////////// IFT ///////////
+			dstarProcessCom_ift( 1, buf);							//backlight to high bright		/////////// IFT ///////////
 
 		}
 	/*	else																						/////////// IFT ///////////
@@ -461,7 +461,7 @@ static void dstarStateChange(unsigned char n)
 				*/
 				
 				//vdisp_prints_xy( 0,0, VDISP_FONT_6x8, 0, "    " );
-				dstarProcessCom_ift( 0, "END-RADIO");																	/////////// IFT ///////////
+				dstarProcessCom_ift( 0, "END-RADIO");								//display to low bright		/////////// IFT ///////////
 
 			}
 			else
@@ -1578,7 +1578,7 @@ void dstarProcessDCSPacket( const uint8_t * data )
 	{
 		last_frame = 1;
 		rx_q_input_stop ( SOURCE_NET, dcs_session, data[45] & 0x1F );
-		dstarProcessCom_ift( 0, "END-DCS");																	/////////// IFT ///////////
+		dstarProcessCom_ift( 0, "END-DCS");									//display to low bright		/////////// IFT ///////////
 	}			
 	else
 	{
@@ -1755,10 +1755,10 @@ void dstarPrintFlags_ift(uint8_t fl_0,uint8_t fl_1,uint8_t fl_2)
 
 void dstarProcessCom_ift(uint8_t b, char * data)
 {
-	serial_init(0, 4800);	// was 115200									/////////// ALX ///////////
+	serial_init(0, 4800);	// was 115200, 4800 for GPS compatibility				/////////// ALX ///////////
 	if ( b == 1)
 	{
-		lcd_set_backlight (50);
+		lcd_set_backlight (50);				//settings for high brightness (50)
 		while ( *data != 0 )
 		{
 			serial_putc(0,*data);
@@ -1768,7 +1768,7 @@ void dstarProcessCom_ift(uint8_t b, char * data)
 	else
 	if ( b == 0)
 	{
-		lcd_set_backlight (8);
+		lcd_set_backlight (8);				//settings for low brightness (8)
 		while ( *data != 0 )
 		{
 			serial_putc(0,*data);

@@ -340,7 +340,7 @@ int snmp_set_sw_update (int32_t arg, const uint8_t * req, int req_len)
 			calc_sha1 ( block_number, tmp_info.sha1sum );
 			
 			flashc_memcpy(STAGING_AREA_INFO_ADDRESS, & tmp_info, sizeof tmp_info, true);
-			// enable watchdog -> reset in one second												/////////// IFT ///////////
+			// enable watchdog -> reset in one second after firmware upload							/////////// IFT ///////////
 			AVR32_WDT.ctrl = 0x55001001;															/////////// IFT ///////////
 			AVR32_WDT.ctrl = 0xAA001001;															/////////// IFT ///////////
 
