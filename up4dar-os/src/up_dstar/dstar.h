@@ -64,6 +64,9 @@ void dstarResetCounters(void);
 
 void dstarProcessDCSPacket( const uint8_t * data );
 void dstarProcessDExtraPacket(const uint8_t* data);
+void dstarPrintFlags_ift(uint8_t fl_0, uint8_t fl_1, uint8_t fl_2);										/////////// IFT ///////////
+void dstarProcessCom_ift(uint8_t b, char * data);			// was (uint8_t b, const uint8_t * data)	/////////// IFT ///////////
+
 int rx_q_process(uint8_t * pos, uint8_t * data, uint8_t * voice);
 
 void dstar_get_header(uint8_t rx_source, uint8_t * crc_result, uint8_t * header_data);

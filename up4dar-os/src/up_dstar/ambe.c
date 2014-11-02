@@ -44,6 +44,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "settings.h"
 #include "up_io/serial2.h"
 #include "fixpoint_math.h"
+#include "up_dstar/dstar.h"															/////////// IFT ///////////
+
 
 
 
@@ -657,6 +659,7 @@ static portTASK_FUNCTION( ambeTask, pvParameters )
 										SETTING_SHORT(S_STANDBY_BEEP_FREQUENCY),
 										SETTING_CHAR(C_STANDBY_BEEP_VOLUME)
 									);
+									
 								}
 							}
 							else

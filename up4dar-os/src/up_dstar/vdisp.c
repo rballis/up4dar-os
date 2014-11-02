@@ -181,6 +181,44 @@ void vdisp_printc_xy ( int x, int y, struct vdisp_font * font, int disp_inverse,
 	}
 }
 
+/////////////////////////////////////////////////// IFT /////////////////////////////////////////////////////////
+void vdisp_printh_xy_ift ( int x, int y, struct vdisp_font * font, int disp_inverse, unsigned long n)
+{
+	//int i;
+	int xx = x;
+	unsigned char buf[8 * sizeof(long)];
+	unsigned long ii = 0;
+	if (n == 0) {
+		vdisp_printc_xy(  x, y, font,  disp_inverse, '0');
+		vdisp_printc_xy(  x+font->width, y, font,  disp_inverse, '0');
+		return;
+	}
+	while (n > 0) {
+		buf[ii++] = n % 16;
+		n /= 16;
+	}
+	
+	if(ii<2)
+	{
+		vdisp_printc_xy(  xx, y, font,  disp_inverse, '0' );
+		xx += font->width;
+		vdisp_printc_xy(  xx, y, font,  disp_inverse, (char) (buf[ii - 1] < 10 ?  '0' + buf[ii - 1] : 'A' + buf[ii - 1] - 10)  );
+		return;
+	}
+	else
+	{
+		for (; ii > 0; ii--)
+		{
+			vdisp_printc_xy(  xx, y, font,  disp_inverse, (char) (buf[ii - 1] < 10 ?  '0' + buf[ii - 1] : 'A' + buf[ii - 1] - 10)  );
+			xx += font->width;
+		}
+		
+	}
+
+}
+/////////////////////////////////////////////////// IFT /////////////////////////////////////////////////////////
+
+
 void vd_printc_xy ( int layer, int x, int y, struct vdisp_font * font, int disp_inverse, unsigned char c)
 {
 	int i;

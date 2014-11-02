@@ -83,7 +83,7 @@ void rtclock_disp_xy(int x, int y, int dots, int display_seconds)
 	
 	unsigned int minutes = m % 60;
 	
-	unsigned int h = m / 60;
+	unsigned int h = m / 60 + 2;						//Setting UTC +2 for local time		 /////////// ALX ///////////
 	
 	unsigned int hours = h % 24;
 	
