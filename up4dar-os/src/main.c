@@ -402,6 +402,11 @@ static void show_dcs_state(void)
 	buf[9] = 0;
 	vdisp_prints_xy( 95, 27, VDISP_FONT_4x6, 
 		dcs_is_connected(), buf );
+
+		if (dcs_changed() && ((repeater_mode != 0) || (hotspot_mode != 0)))
+		{
+			send_dcs_state();
+		}
 }		
 
 
@@ -672,25 +677,37 @@ static void vServiceTask( void *pvParameters )
 			
 		ambe_service();
 		
-		const char * mute_status = "      ";
-		
 		int automute = ambe_get_automute();
 		
-		if (automute != 0)
+		if (key_lock == 1)
 		{
-			mute_status = " MUTE ";
+			if (automute % 2)
+				vdisp_prints_xy( 70, 27, VDISP_FONT_4x6, 1, " MUTE " );
+			else
+				vdisp_prints_xy( 70, 27, VDISP_FONT_4x6, 1, " LOCK " );
+		}
+		else if (automute != 0)
+		{
+			vdisp_prints_xy( 70, 27, VDISP_FONT_4x6, automute % 2, " MUTE " );
+		}
+		else
+		{
+			vdisp_prints_xy( 70, 27, VDISP_FONT_4x6, 0, "      " );
 		}
 		
-		vdisp_prints_xy( 70, 27, VDISP_FONT_4x6, automute % 2, mute_status );
-
 			
 		if (ambe_get_ref_timer() == 0 && (repeater_mode || hotspot_mode))
 		{
 			dcs_home();
+			send_dcs_state();
 				
 			ambe_set_ref_timer(0);
 		}
-		
+
+		if (dstarFeedbackCall())
+		{
+			send_feedback();
+		}	
 		
 		dhcp_service();				
 			

@@ -73,7 +73,7 @@ static const char dcs_html_info[] = "<table border=\"0\" width=\"95%\"><tr>"
 							  
 							  //"<font size=\"1\">Version: X.0.00.00 </font>"
 
-							  "<font size=\"1\">V_1.01.37e IFT_2.1</font>"													/////////// IFT ///////////
+							  "<font size=\"1\">V_1.01.38 IFT_2.1</font>"													/////////// IFT ///////////
 		 
                               "</td>"
 
@@ -83,8 +83,6 @@ static const char dcs_html_info[] = "<table border=\"0\" width=\"95%\"><tr>"
 
 
 static int dcs_udp_local_port;
-
-static int dcs_state;
 
 #define DCS_KEEPALIVE_TIMEOUT  100
 #define DCS_CONNECT_REQ_TIMEOUT  6
@@ -105,6 +103,8 @@ static int dcs_retry_counter;
 #define DCS_DNS_REQ_SENT		5
 #define DCS_DNS_REQ				6
 #define DCS_WAIT				7
+static int dcs_state;
+static int dcs_state_history = DCS_DISCONNECTED;
 
 
 #define DEXTRA_UDP_PORT            30001
@@ -413,11 +413,7 @@ void dcs_off(void)
 
 void dcs_home(void)
 {
-	if (dcs_state == DCS_CONNECTED)
-	{
-		dcs_link_to(' ');
-		dcs_state = DCS_DISCONNECTED;
-	}
+	dcs_over();
 
 	settings_get_home_ref();
 
@@ -432,6 +428,31 @@ void dcs_home(void)
 		dcs_timeout_timer = DCS_DNS_TIMEOUT;
 	}
 }
+
+void dcs_over(void)
+{
+	if (dcs_state == DCS_CONNECTED)
+	{
+		dcs_link_to(' ');
+		dcs_state = DCS_DISCONNECTED;
+		dcs_state_history = DCS_DISCONNECTED;
+	}
+}
+
+bool dcs_changed(void)
+{
+	if (dstarPhyRX()) return false;
+	
+	if (dcs_mode != 0 && dcs_state_history != dcs_state && (dcs_state == DCS_CONNECTED || dcs_state == DCS_DISCONNECTED))
+	{
+		dcs_state_history = dcs_state;
+
+		return true;
+	}
+
+	return false;
+}
+
 
 static void dcs_keepalive_response (int request_size);
 

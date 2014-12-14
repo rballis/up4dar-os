@@ -59,6 +59,9 @@ void dstarRMUEnable(void);
 void dstarRMUStatus(void);
 void dstarChangeMode(int m);
 bool dstarRefreshMode(void);
+bool dstarFeedbackCall(void);
+bool dstarPhyRX(void);
+int dstarFeedbackHeader(void);
 
 void dstarResetCounters(void);
 

@@ -74,6 +74,10 @@ int ppm_buf[PPM_BUFSIZE];
 int ppm_ptr;
 int ppm_display_active;
 bool mode_refresh = false;
+bool feedback_call = false;
+int feedback_header = 0;
+
+bool phy_rx = false;
 
 static void mkPrintableString (char * data, int len)
 {
@@ -883,9 +887,19 @@ int rx_q_process(uint8_t * pos, uint8_t * data, uint8_t * voice)
 		case SOURCE_PHY:
 			num_empty = 0;
 			last_valid_source = rx_q_buf[current_pos].source;
+			if (((hotspot_mode || repeater_mode)) && (last_valid_source == SOURCE_PHY))
+			{
+				feedback_call = false;
+				phy_rx = true;
+			}
 			break;
 			
 		case SOURCE_STOP:
+			if (((hotspot_mode || repeater_mode)) && (last_valid_source == SOURCE_PHY))
+			{
+				feedback_call = true;
+				phy_rx = false;
+			}
 			current_source = 0; // switch off
 			num_written = 0; // stop processing
 			rx_q_buf[current_pos].source = 0; 
@@ -981,7 +995,26 @@ int rx_q_process(uint8_t * pos, uint8_t * data, uint8_t * voice)
 	return last_valid_source;
 }
 
+bool dstarFeedbackCall(void)
+{
+	if (feedback_call)
+	{
+		feedback_call = false;
+		return true;
+	}
 
+	return false;
+}
+
+bool dstarPhyRX(void)
+{
+	return phy_rx;
+}
+
+int dstarFeedbackHeader(void)
+{
+	return feedback_header;
+}
 
 static void rx_q_input_stop( uint8_t source, uint16_t session, uint8_t pos ) 
 {
@@ -1175,7 +1208,8 @@ static void processPacket(void)
 				vdisp_i2s (buf, 2, 16, 1, dp.data[3]);
 				vd_prints_xy(VDISP_DEBUG_LAYER, 116, 0, VDISP_FONT_6x8, 0, buf);
 				
-			}						
+			}
+			feedback_header = 1;					
 			pos_in_frame = POS_LAST;
 			break;
 			
@@ -1212,7 +1246,8 @@ static void processPacket(void)
 						pos_in_frame = 0;
 					}
 				}				
-			}				
+			}
+			feedback_header = 2;				
 			break;
 			
 		case 0x32:
@@ -1256,7 +1291,8 @@ static void processPacket(void)
 					vdisp_prints_xy( 0, 0, VDISP_FONT_6x8, 0, minus ? "-" : "+" );
 					// vdisp_prints_xy( 20, 0, VDISP_FONT_5x8, 0, "ppm" );
 				}
-			}				
+			}
+			feedback_header = 3;				
 			break;
 		case 0x33:
 			if (dp.dataLen == 4)
@@ -1283,6 +1319,8 @@ static void processPacket(void)
 			break;
 		case 0x34:
 			rx_q_input_stop ( SOURCE_PHY, 0, pos_in_frame );
+			feedback_header = true;
+			feedback_header = 0;
 			break;
 			
 		case 0x35:
